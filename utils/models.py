@@ -29,16 +29,7 @@ class CNN(nn.Module):
         nn.MaxPool2d(2, 2)
         )
         self.layer_3 = nn.Sequential(
-        nn.Conv2d(in_channels=hidden_units*2, out_channels=hidden_units*3, kernel_size=3, stride=1, padding=1),
-        nn.BatchNorm2d(hidden_units*3),
-        nn.ReLU(),
-        nn.Conv2d(in_channels=hidden_units*3, out_channels=hidden_units*3, kernel_size=3, padding=1),
-        nn.BatchNorm2d(hidden_units*3),
-        nn.ReLU(),
-        nn.MaxPool2d(2, 2)
-        )
-        self.layer_4 = nn.Sequential(
-        nn.Conv2d(in_channels=hidden_units*3, out_channels=hidden_units*4, kernel_size=3, stride=1, padding=1),
+        nn.Conv2d(in_channels=hidden_units*2, out_channels=hidden_units*4, kernel_size=3, stride=1, padding=1),
         nn.BatchNorm2d(hidden_units*4),
         nn.ReLU(),
         nn.Conv2d(in_channels=hidden_units*4, out_channels=hidden_units*4, kernel_size=3, padding=1),
@@ -46,13 +37,18 @@ class CNN(nn.Module):
         nn.ReLU(),
         nn.MaxPool2d(2, 2)
         )
+        self.layer_4 = nn.Sequential(
+        nn.Conv2d(in_channels=hidden_units*4, out_channels=hidden_units*8, kernel_size=3, stride=1, padding=1),
+        nn.BatchNorm2d(hidden_units*8),
+        nn.ReLU(),
+        nn.Conv2d(in_channels=hidden_units*8, out_channels=hidden_units*8, kernel_size=3, padding=1),
+        nn.BatchNorm2d(hidden_units*8),
+        nn.ReLU(),
+        nn.MaxPool2d(2, 2)
+        )
 
         self.avgpool = nn.AdaptiveAvgPool2d((1,1))
-        self.classifier = nn.Sequential(
-            nn.Linear(hidden_units*4, 512),
-            nn.ReLU(),
-            nn.Linear(512, output_shape)
-        )
+        self.classifier = Classifier(input_shape=hidden_units*8, output_shape=output_shape)
     
     def forward(self, x):
         x = self.layer_1(x)
@@ -60,12 +56,25 @@ class CNN(nn.Module):
         x = self.layer_3(x)
         x = self.layer_4(x)
         x = self.avgpool(x)
-        x = x.view(x.size(0), -1)
-        x = self.classifier(x)
-        x = softmax(x, dim=1)
 
+        x = x.view(x.size(0), -1) # flatten
+
+        x = self.classifier(x)
         return x 
-    
-    
+
+class Classifier(nn.Module):
+    def __init__(self, input_shape: int, output_shape: int):
+        super(Classifier, self).__init__()
+        self.classifier = nn.Sequential(
+            nn.Linear(input_shape, 512),
+            nn.ReLU(),
+            nn.Linear(512, output_shape)
+        )
+
+    def forward(self, x):
+        x = self.classifier(x)
+        return x
+
 class ScatNet():
-    pass
+    def __init__(self):
+        self.classifier = Classifier(input_shape=..., output_shape=1)

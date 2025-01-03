@@ -4,28 +4,35 @@ from utils.config import *
 from PIL import Image
 
 class VisualDataset(Dataset):
-    def __init__(self, images: list, labels: list, transform=None):
-        self.images = images
+    def init(self, imgs, labels, transform=None):
+        self.imgs = imgs
         self.labels = labels
         self.transform = transform
 
-        self.adeno_path = os.path.join(DATASET_PATH, 'adenocarcinoma')
-        self.benign_path = os.path.join(DATASET_PATH, 'benign')
-
-    def __len__(self):
+    def len(self):
         return len(self.labels)
 
-    def __getitem__(self, index):
-        img_path = self.images[index]
-        label = self.labels[index]
-
-        if label == 0:
-            img_path = os.path.join(self.adeno_path, img_path)
-        else:
-            img_path = os.path.join(self.benign_path, img_path)
-
-        image = Image.open(img_path).convert('RGB')
+    def getitem(self, idx):
+        img_path = self.imgs[idx][0]
+        label = self.labels[idx]
+        img = Image.open(img_path)
         if self.transform:
-            image = self.transform(image)
+            img = self.transform(img)
+        return img, label
 
-        return image, label
+def get_imgs_list(dir_path):
+    imgs = []
+    for class_name in os.listdir(dir_path):
+        class_path = os.path.join(dir_path, class_name)
+        for img_name in os.listdir(class_path):
+            img_path = os.path.join(class_path, img_name)
+            imgs.append((img_path, class_name))
+
+    labels = []
+    for img in imgs:
+        if img[1] == 'adenocarcinoma':
+            labels.append(0)
+        else:
+            labels.append(1)
+
+    return imgs, labels
