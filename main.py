@@ -5,7 +5,7 @@ import torch
 
 from utils.config import *
 from utils.models import *
-from utils.utils import train_model
+from utils.utils import train_model, test_model
 
 def main():
     X, Y = get_imgs_list(DATASET_PATH)
@@ -34,8 +34,13 @@ def main():
     scat_loss_fn = nn.BCEWithLogitsLoss()
     scat_optimizer = torch.optim.Adam(scatnet.parameters(), lr=LEARNING_RATE)
 
-    # train_model(model=cnn, loss_fn=cnn_loss_fn, optimizer=cnn_optimizer, data_loader=train_data_loader)
+    # train and test the models
+    # cnn model
+    train_model(model=cnn, loss_fn=cnn_loss_fn, optimizer=cnn_optimizer, data_loader=train_data_loader)
+    test_model(model=cnn, loss_fn=cnn_loss_fn, data_loader=test_data_loader)
+    # scatnet model
     train_model(model=scatnet, loss_fn=scat_loss_fn, optimizer=scat_optimizer, data_loader=train_data_loader)
+    test_model(model=scatnet, loss_fn=scat_loss_fn, data_loader=test_data_loader)
 
 if __name__ == '__main__':
     main()

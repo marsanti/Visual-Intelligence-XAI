@@ -81,7 +81,7 @@ class ScatNet(nn.Module):
         super(ScatNet, self).__init__()
         self.scatLayer = Scattering2D(J=J, L=L, shape=input_shape)
         input_classifier_shape = self._calc_input_classifier_shape(J, L, input_shape)
-        print(f'Input classifier shape: {input_classifier_shape}')
+        # print(f'Input classifier shape: {input_classifier_shape}')
         self.classifier = Classifier(input_shape=input_classifier_shape, output_shape=1)
 
     def forward(self, x):
