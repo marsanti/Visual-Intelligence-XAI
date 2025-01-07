@@ -4,15 +4,15 @@ from utils.config import *
 from PIL import Image
 
 class VisualDataset(Dataset):
-    def init(self, imgs, labels, transform=None):
+    def __init__(self, imgs, labels, transform=None):
         self.imgs = imgs
         self.labels = labels
         self.transform = transform
 
-    def len(self):
+    def __len__(self):
         return len(self.labels)
 
-    def getitem(self, idx):
+    def __getitem__(self, idx):
         img_path = self.imgs[idx][0]
         label = self.labels[idx]
         img = Image.open(img_path)

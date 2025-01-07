@@ -22,15 +22,20 @@ def main():
     print(f'Train dataset size: {len(train_dataset)}')
     print(f'Test dataset size: {len(test_dataset)}')
     
-    # instantiate models
-    cnn = CNN(input_shape=3, output_shape=1).to(DEVICE)
-    scatnet = ScatNet()
+    # === INSTANTIATE MODELS ===
+    # input shape is 1 because the images are in greyscale
+    cnn = CNN(input_shape=1, output_shape=1).to(DEVICE)
+    scatnet = ScatNet().to(DEVICE)
 
     # define loss and optimizer for the CNN
     cnn_loss_fn = nn.BCEWithLogitsLoss()
     cnn_optimizer = torch.optim.Adam(cnn.parameters(), lr=LEARNING_RATE)
 
-    train_model(model=cnn, loss_fn=cnn_loss_fn, optimizer=cnn_optimizer, data_loader=train_data_loader)
+    scat_loss_fn = nn.BCEWithLogitsLoss()
+    scat_optimizer = torch.optim.Adam(scatnet.parameters(), lr=LEARNING_RATE)
+
+    # train_model(model=cnn, loss_fn=cnn_loss_fn, optimizer=cnn_optimizer, data_loader=train_data_loader)
+    train_model(model=scatnet, loss_fn=scat_loss_fn, optimizer=scat_optimizer, data_loader=train_data_loader)
 
 if __name__ == '__main__':
     main()
