@@ -15,7 +15,7 @@ TRANSFORM = transforms.Compose([
 MODEL_PATH = 'model_weights'
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 K_FOLDS = 5
-
+SKIP_TRAINING = True
 EPOCHS = 5
 RANDOM_STATE = 42
 BATCH_SIZE = 32
