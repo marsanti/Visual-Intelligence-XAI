@@ -4,6 +4,11 @@ from kymatio.torch import Scattering2D
 
 from utils.config import *
 
+def reset_weights(m):
+    for layer in m.children():
+        if hasattr(layer, 'reset_parameters'):
+            layer.reset_parameters()
+
 class CNN(nn.Module):
     """
     Model architecture that replicate ResNet-12.
