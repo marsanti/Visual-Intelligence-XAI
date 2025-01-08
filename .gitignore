@@ -2,3 +2,4 @@ dataset/
 utils/__pycache__
 __pycache__
 model_weights/
+filters/

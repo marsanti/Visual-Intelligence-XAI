@@ -13,6 +13,7 @@ TRANSFORM = transforms.Compose([
     transforms.Grayscale()
 ])
 MODEL_PATH = 'model_weights'
+FILTERS_PATH = 'filters'
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 K_FOLDS = 5
 SKIP_TRAINING = True

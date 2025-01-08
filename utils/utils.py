@@ -1,12 +1,102 @@
+from scipy.fft import fft2
 from torch import nn
 from torch.utils.data import DataLoader, Dataset
+from torchvision import utils
 from sklearn.model_selection import KFold
 from sklearn.metrics import f1_score, accuracy_score
+from matplotlib import pyplot as plt
+from colorsys import hls_to_rgb
 import os
 import numpy as np
 from tqdm import tqdm
 from utils.config import *
 from utils.models import CNN, ScatNet, reset_weights
+
+def extract_conv_filters(model: CNN) -> list[torch.Tensor]:
+    """
+        Extract convolutional filters from a given model.
+
+        Returns a list of tensors containing the filters.
+    """
+    model_weights =[]
+    # get all the model children as list
+    model_children = list(model.children())
+    #counter to keep count of the conv layers
+    counter = 0
+    #append all the weights to the list
+    for i in range(len(model_children)):
+        if type(model_children[i]) == nn.Conv2d:
+            counter+=1
+            model_weights.append(model_children[i].weight)
+        elif type(model_children[i]) == nn.Sequential:
+            # inside sequential there are conv layers
+            for j in range(len(model_children[i])):
+                if type(model_children[i][j]) == nn.Conv2d:
+                    counter+=1
+                    model_weights.append(model_children[i][j].weight)
+
+    return model_weights
+
+def visTensor(tensor, ch=0, allkernels=False, nrow=8, padding=1, path_to_save=None):
+        n,c,w,h = tensor.shape
+
+        if allkernels: tensor = tensor.view(n*c, -1, w, h)
+        elif c != 3: tensor = tensor[:,ch,:,:].unsqueeze(dim=1)
+
+        rows = np.min((tensor.shape[0] // nrow + 1, 64))    
+        grid = utils.make_grid(tensor.detach().cpu(), nrow=nrow, normalize=True, padding=padding)
+        plt.figure( figsize=(nrow,rows) )
+        plt.imshow(grid.numpy().transpose((1, 2, 0)))
+        if path_to_save:
+            plt.savefig(path_to_save)
+        else:
+            plt.show()
+
+def colorize(z):
+    n, m = z.shape
+    c = np.zeros((n, m, 3))
+    c[np.isinf(z)] = (1.0, 1.0, 1.0)
+    c[np.isnan(z)] = (0.5, 0.5, 0.5)
+
+    idx = ~(np.isinf(z) + np.isnan(z))
+    A = (np.angle(z[idx]) + np.pi) / (2*np.pi)
+    A = (A + 0.5) % 1.0
+    B = 1.0/(1.0 + abs(z[idx])**0.3)
+    c[idx] = [hls_to_rgb(a, b, 0.8) for a, b in zip(A, B)]
+    return c
+
+def extract_and_visualize_scat_filters(model: ScatNet, path_to_save: str) -> None:
+    """
+        Extract scattering filters from a given model.
+
+        Returns a list of tensors containing the filters.
+    """
+    J, L = model.J, model.L
+    # load the filters
+    filters = model.scatLayer.psi
+    # plot the filters
+    fig, axs = plt.subplots(J, L, sharex=True, sharey=True)
+    #plt.rc('text', usetex=True)
+    plt.rc('font', family='serif')
+    i = 0
+    for filter in filters:
+        f = filter["levels"][0]
+        filter_c = fft2(f)
+        filter_c = np.fft.fftshift(filter_c)
+        axs[i // L, i % L].imshow(colorize(filter_c))
+        axs[i // L, i % L].axis('off')
+        axs[i // L, i % L].set_title(
+            "j={}\ntheta={}".format(i // L, i % L))
+        i = i+1
+
+    fig.suptitle((r"Wavelets for each scales j and angles theta used."
+                "\nColor saturation and color hue respectively denote complex "
+                "magnitude and complex phase."), fontsize=13)
+    plt.tight_layout()
+    if path_to_save:
+        plt.savefig(path_to_save)
+    else:
+        plt.show()
 
 def k_fold_cross_validation_train(model: any, loss_fn: any, optimizer:any, train_dataset: Dataset) -> tuple[float, float]:
     """
@@ -54,7 +144,6 @@ def k_fold_cross_validation_train(model: any, loss_fn: any, optimizer:any, train
             torch.save(model.state_dict(), model_path)
 
     return (acc_mean/K_FOLDS, f1_mean/K_FOLDS)
-
 
 def train_model(model: any, loss_fn: any, optimizer: any, train_data_loader: DataLoader, val_data_loader: DataLoader = None) -> tuple[list[torch.Tensor], list[float], list[float], float]:
     """
