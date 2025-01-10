@@ -14,9 +14,12 @@ TRANSFORM = transforms.Compose([
 ])
 MODEL_PATH = 'model_weights'
 FILTERS_PATH = 'filters'
+XAI_RESULTS_PATH = 'XAI_methods/example_images'
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 K_FOLDS = 5
 SKIP_TRAINING = True
+SKIP_FILTERS_EXTRACTION = True
+SKIP_TESTING = True
 EPOCHS = 5
 RANDOM_STATE = 42
 BATCH_SIZE = 32

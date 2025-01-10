@@ -1,4 +1,5 @@
 import time
+from XAI_methods.guided_backpropagation import *
 from dataset import VisualDataset, get_imgs_list
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader
@@ -8,6 +9,7 @@ import os
 from utils.config import *
 from utils.models import *
 from utils.utils import *
+from XAI_methods import *
 
 def main():
     print("initializing dataset...", end=' ')
@@ -60,21 +62,25 @@ def main():
     scatnet.load_state_dict(torch.load(best_scatnet_path, weights_only=False))
     print(f"\t\t Done in: {time.time() - start:.2f} seconds")
 
-    print('Extracting filters...', end=' ')
-    start = time.time()
-    cnn_filters = extract_conv_filters(cnn)
-    for i in range(len(cnn_filters)):
-        filter_path = os.path.join(FILTERS_PATH, f'conv{i+1}_CNN_filters.png')
-        visTensor(cnn_filters[i], ch=0, allkernels=False, path_to_save=filter_path)
-    filter_path = os.path.join(FILTERS_PATH, 'scatNet_filters.png')
-    extract_and_visualize_scat_filters(scatnet, path_to_save=filter_path)
-    print(f"\t\t Done in: {time.time() - start:.2f} seconds")
+    if not SKIP_FILTERS_EXTRACTION:
+        print('Extracting filters...', end=' ')
+        start = time.time()
+        cnn_filters = extract_conv_filters(cnn)
+        for i in range(len(cnn_filters)):
+            filter_path = os.path.join(FILTERS_PATH, f'conv{i+1}_CNN_filters.png')
+            visTensor(cnn_filters[i], ch=0, allkernels=False, path_to_save=filter_path)
+        filter_path = os.path.join(FILTERS_PATH, 'scatNet_filters.png')
+        extract_and_visualize_scat_filters(scatnet, path_to_save=filter_path)
+        print(f"\t\t Done in: {time.time() - start:.2f} seconds")
 
-    print(f'\n === Testing models ===')
-    print('CNN model')
-    test_model(model=cnn, loss_fn=cnn_loss_fn, data_loader=test_data_loader, is_val_phase=False)
-    print('ScatNet model')
-    test_model(model=scatnet, loss_fn=scat_loss_fn, data_loader=test_data_loader, is_val_phase=False)
+    demo_guided_backprop(cnn)
+
+    if not SKIP_TESTING:
+        print(f'\n === Testing models ===')
+        print('CNN model')
+        test_model(model=cnn, loss_fn=cnn_loss_fn, data_loader=test_data_loader, is_val_phase=False)
+        print('ScatNet model')
+        test_model(model=scatnet, loss_fn=scat_loss_fn, data_loader=test_data_loader, is_val_phase=False)
 
 if __name__ == '__main__':
     main()

@@ -98,6 +98,13 @@ def extract_and_visualize_scat_filters(model: ScatNet, path_to_save: str) -> Non
     else:
         plt.show()
 
+def normalize(image):
+    norm = (image - image.mean())/image.std()
+    norm = norm * 0.1
+    norm = norm + 0.5
+    norm = norm.clip(0, 1)
+    return norm
+
 def k_fold_cross_validation_train(model: any, loss_fn: any, optimizer:any, train_dataset: Dataset) -> tuple[float, float]:
     """
         Perform k-fold cross validation training for both CNN and ScatNet models.
