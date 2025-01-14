@@ -1,3 +1,4 @@
+import cv2
 from scipy.fft import fft2
 from torch import nn
 from torch.utils.data import DataLoader, Dataset
@@ -11,6 +12,8 @@ import numpy as np
 from tqdm import tqdm
 from utils.config import *
 from utils.models import CNN, ScatNet, reset_weights
+import cv2
+from torchvision.transforms.functional import to_pil_image
 
 def extract_conv_filters(model: CNN) -> list[torch.Tensor]:
     """
@@ -104,6 +107,35 @@ def normalize(image):
     norm = norm + 0.5
     norm = norm.clip(0, 1)
     return norm
+
+def visualize_heatmap(image, heatmap: np.ndarray) -> None:
+        # Visualize the heatmap over the image
+        heatmap = cv2.resize(heatmap, (image.shape[2], image.shape[1]))
+        heatmap = np.uint8(255 * heatmap)
+        heatmap = cv2.applyColorMap(heatmap, cv2.COLORMAP_JET)
+        heatmap = cv2.cvtColor(heatmap, cv2.COLOR_BGR2RGB)
+
+        # Superimpose the heatmap on the image
+        image = image.cpu().permute(1, 2, 0).numpy()
+        image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+
+        # convrt heatmap from uint8 to float32
+        heatmap = heatmap.astype(np.float32) / 255
+
+        superimposed_img = cv2.addWeighted(heatmap, 0.6, image, 0.4, gamma=0)
+
+        # Display the images
+        fig, ax = plt.subplots(1, 2, figsize=(10, 5))
+        ax[0].imshow(to_pil_image(image))
+        ax[0].set_title('Original Image')
+        ax[0].axis('off')
+
+        ax[1].imshow(to_pil_image(superimposed_img))
+        ax[1].set_title('Guided Grad-CAM')
+        ax[1].axis('off')
+
+        plt.tight_layout()
+        plt.show()
 
 def k_fold_cross_validation_train(model: any, loss_fn: any, optimizer:any, train_dataset: Dataset) -> tuple[float, float]:
     """

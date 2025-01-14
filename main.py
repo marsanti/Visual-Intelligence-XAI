@@ -1,5 +1,6 @@
 import time
 from XAI_methods.guided_backpropagation import *
+from XAI_methods.guided_gradCAM import *
 from dataset import VisualDataset, get_imgs_list
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader
@@ -73,7 +74,8 @@ def main():
         extract_and_visualize_scat_filters(scatnet, path_to_save=filter_path)
         print(f"\t\t Done in: {time.time() - start:.2f} seconds")
 
-    demo_guided_backprop(cnn)
+    # demo_guided_backprop(cnn)
+    demo_guided_gradCAM(cnn)
 
     if not SKIP_TESTING:
         print(f'\n === Testing models ===')
