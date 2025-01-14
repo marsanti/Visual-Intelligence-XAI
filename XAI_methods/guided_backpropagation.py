@@ -1,4 +1,3 @@
-from copy import deepcopy
 import torch
 from torch import nn
 import warnings
@@ -14,6 +13,7 @@ class custom_guided_backpropagation():
         self.model = model
         self.image_reconstruction = None # store R0
         self.activation_maps = []  # store f1, f2, ... 
+        self.hooks = []
         self.model.eval()
         self.register_hooks()
 
@@ -48,11 +48,21 @@ class custom_guided_backpropagation():
         for i in range(len(modules)):
             for name, module in modules[i]:
                 if type(module) == nn.ReLU:
-                    module.register_forward_hook(forward_hook_fn)
-                    module.register_full_backward_hook(backward_hook_fn)
+                    hook = module.register_forward_hook(forward_hook_fn)
+                    hook2 = module.register_full_backward_hook(backward_hook_fn)
+                    self.hooks.append(hook)
+                    self.hooks.append(hook2)
 
         first_layer = modules[0][0][1]
-        first_layer.register_full_backward_hook(first_layer_hook_fn)
+        hook = first_layer.register_full_backward_hook(first_layer_hook_fn)
+        self.hooks.append(hook)
+
+    def remove(self) -> None:
+        """
+        Remove all registered hooks
+        """
+        for hook in self.hooks:
+            hook.remove()
 
     def visualize(self, input_image, target_class):
         model_output = self.model(input_image)
@@ -72,8 +82,6 @@ class custom_guided_backpropagation():
         return result.cpu().numpy()
     
 def demo_guided_backprop(model):
-    model_custom = deepcopy(model)
-    model_captum = deepcopy(model)
     # open an adenocarcinoma image and a benign image
     adeno_image = PIL.Image.open('dataset/adenocarcinoma/0000.jpg')
     benign_image = PIL.Image.open('dataset/benign/0000.jpg')
@@ -81,25 +89,23 @@ def demo_guided_backprop(model):
     adeno_image = TRANSFORM(adeno_image).to(DEVICE)
     benign_image = TRANSFORM(benign_image).to(DEVICE)
     # add batch dimension and set requires_grad to True
-    adeno_image_for_attr = deepcopy(adeno_image).unsqueeze(0).requires_grad_()
-    benign_image_for_attr = deepcopy(benign_image).unsqueeze(0).requires_grad_()
+    adeno_image_for_attr = adeno_image.unsqueeze(0).requires_grad_()
+    benign_image_for_attr = benign_image.unsqueeze(0).requires_grad_()
     # execute guided backprop on each image
     # captum guided backpropagation
+    # use warnings to ignore the Warning: "Setting backward hooks on ReLU activations. The hooks will be removed after the attribution is finished"
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        captum_gbp = captum.attr.GuidedBackprop(model_captum)
+        model.eval()
+        captum_gbp = captum.attr.GuidedBackprop(model)
         adeno_captum_attr = captum_gbp.attribute(adeno_image_for_attr, target=None)
         benign_captum_attr = captum_gbp.attribute(benign_image_for_attr, target=None)
 
-    # reinitialize the images
-    adeno_image_for_attr = deepcopy(adeno_image).unsqueeze(0).requires_grad_()
-    benign_image_for_attr = deepcopy(benign_image).unsqueeze(0).requires_grad_()
-
     # custom guided backpropagation
-    custom_gbp = custom_guided_backpropagation(model_custom)
-
+    custom_gbp = custom_guided_backpropagation(model)
     adeno_attr = custom_gbp.visualize(adeno_image_for_attr, None)
     benign_attr = custom_gbp.visualize(benign_image_for_attr, None)
+    custom_gbp.remove()
 
     adeno_attr_norm = normalize(adeno_attr)
     benign_attr_norm = normalize(benign_attr)

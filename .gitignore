@@ -1,6 +1,6 @@
-dataset/
+dataset/*
 utils/__pycache__
 __pycache__
-model_weights/
-filters/
-XAI_methods/example_images/
+model_weights/*
+filters/*
+XAI_methods/example_images/*
