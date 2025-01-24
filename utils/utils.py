@@ -1,5 +1,7 @@
+import json
 import cv2
 from scipy.fft import fft2
+import torch
 from torch import nn
 from torch.utils.data import DataLoader, Dataset
 from torchvision import utils
@@ -108,6 +110,24 @@ def normalize(image):
     norm = norm.clip(0, 1)
     return norm
 
+def hide_axes(ax):
+    # Hide spines and ticks, but keep labels
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['left'].set_visible(False)
+    ax.spines['bottom'].set_visible(False)
+    ax.set_xticks([])  # Hide x-ticks
+    ax.set_yticks([])  # Hide y-ticks
+
+def get_classname(y_pred: torch.Tensor) -> str:
+    match y_pred.item():
+        case 0:
+            return "Adenocarcinoma"
+        case 1:
+            return "Benign"
+        case _:
+            return "Not defined"
+
 def visualize_heatmap(image, heatmap: np.ndarray) -> None:
         # Visualize the heatmap over the image
         heatmap = cv2.resize(heatmap, (image.shape[2], image.shape[1]))
@@ -160,6 +180,13 @@ def k_fold_cross_validation_train(model: any, loss_fn: any, optimizer:any, train
     f1_mean = 0.0
     best_acc = 0.0
 
+    score = {
+        'train_loss': [],
+        'train_acc': [],
+        'train_f1': [],
+        'val_acc': []
+    }
+
     for fold, (train_idx, val_idx) in enumerate(k_fold.split(train_dataset)):
         print(f"\n### Fold: {fold+1}/{K_FOLDS} ###\n")
 
@@ -174,6 +201,10 @@ def k_fold_cross_validation_train(model: any, loss_fn: any, optimizer:any, train
 
         loss_history, train_acc_history, f1_score_history, val_acc = train_model(model, loss_fn, optimizer, train_dataloader, val_dataloader)
         
+        score['train_loss'].append(loss_history)
+        score['train_acc'].append(train_acc_history)
+        score['train_f1'].append(f1_score_history)
+        score['val_acc'].append(val_acc)    
         acc_mean += val_acc
 
         f1_mean += np.mean(f1_score_history)
@@ -181,6 +212,8 @@ def k_fold_cross_validation_train(model: any, loss_fn: any, optimizer:any, train
         if best_acc < val_acc:
             best_acc = val_acc
             torch.save(model.state_dict(), model_path)
+
+    json.dump(score, open(os.path.join(MODEL_PATH, f'{model_name}_training.json'), 'w'))
 
     return (acc_mean/K_FOLDS, f1_mean/K_FOLDS)
 
@@ -218,13 +251,13 @@ def train_model(model: any, loss_fn: any, optimizer: any, train_data_loader: Dat
             optimizer.step()
             
             running_loss += loss.item()
-            train_loss_history.append(loss.item())
             acc_score += accuracy_score(Y.cpu().detach().numpy(), torch.round(torch.sigmoid(Y_pred)).cpu().detach().numpy())
             f1 += f1_score(Y.cpu().detach().numpy(), torch.round(torch.sigmoid(Y_pred)).cpu().detach().numpy())
 
             pbar.set_description(
                     f'Epoch {epoch+1}/{EPOCHS} | train | Loss: {running_loss/(i+1):.4f} | Acc: {(acc_score/((i+1)))*100:.2f}%')
         
+        train_loss_history.append(running_loss/len(train_data_loader))
         f1_history.append(f1/len(train_data_loader))
         train_acc_history.append(acc_score/len(train_data_loader))
 
@@ -257,5 +290,7 @@ def test_model(model: any, loss_fn: any, data_loader: DataLoader, is_val_phase: 
 
         pbar.set_description(
                 f'{phase} | Loss: {running_loss/(i+1):.4f} | Acc: {(acc_score/(i+1))*100:.2f}%')
+        
+    acc_score /= len(data_loader)
     
     return acc_score

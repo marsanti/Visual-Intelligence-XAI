@@ -30,7 +30,7 @@ def main():
     best_cnn_path = os.path.join(MODEL_PATH, 'best_CNN.pth')
     best_scatnet_path = os.path.join(MODEL_PATH, 'best_ScatNet.pth')
 
-    cnn = CNN(input_shape=1, output_shape=1).to(DEVICE)
+    cnn = CNN(input_shape=3, output_shape=1).to(DEVICE)
     cnn_loss_fn = nn.BCEWithLogitsLoss()
     
     # Initialize models
@@ -74,8 +74,19 @@ def main():
         extract_and_visualize_scat_filters(scatnet, path_to_save=filter_path)
         print(f"\t\t Done in: {time.time() - start:.2f} seconds")
 
-    # demo_guided_backprop(cnn)
-    demo_guided_gradCAM(cnn)
+    # get the first adenocarcinoma and benign images from test set
+    adeno_image = None
+    benign_image = None
+    for i in range(len(test_dataset)) :
+        if test_dataset[i][1] == 0 and adeno_image is None:
+            adeno_image = test_dataset[i][0].to(DEVICE)
+        elif test_dataset[i][1] == 1 and benign_image is None:
+            benign_image = test_dataset[i][0].to(DEVICE)
+        if adeno_image is not None and benign_image is not None:
+            break
+
+    demo_guided_backprop(cnn, adeno_image, benign_image)
+    demo_guided_gradCAM(cnn, adeno_image, benign_image)
 
     if not SKIP_TESTING:
         print(f'\n === Testing models ===')

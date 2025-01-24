@@ -11,7 +11,7 @@ def reset_weights(m):
 
 class CNN(nn.Module):
     """
-    Model architecture that replicate ResNet-12.
+    Model architecture that replicate a lighter version of ResNet-12.
     """
     def __init__(self, input_shape: int, output_shape: int, hidden_units: int = 64):
         super(CNN, self).__init__()
@@ -82,21 +82,21 @@ class Classifier(nn.Module):
         return x
 
 class ScatNet(nn.Module):
-    def __init__(self, J: int = 3, L: int = 8, input_shape: tuple = (224, 224)):
+    def __init__(self, J: int = 3, L: int = 8, input_shape: tuple = (224, 224), n_channels: int = 3):
         super(ScatNet, self).__init__()
         self.J = J
         self.L = L
         self.input_shape = input_shape
         self.scatLayer = Scattering2D(J=J, L=L, shape=input_shape)
-        input_classifier_shape = self._calc_input_classifier_shape(J, L, input_shape)
+        self.n_channels = n_channels
+        input_classifier_shape = self.n_channels * self._calc_input_classifier_shape(J, L, input_shape)
         # print(f'Input classifier shape: {input_classifier_shape}')
         self.classifier = Classifier(input_shape=input_classifier_shape, output_shape=1)
 
     def forward(self, x):
-        x = x.squeeze(1) # remove the channel dimension
+        # x = x.squeeze(1) # remove the channel dimension
         # generate scattering coefficients
         x = self.scatLayer.scattering(x) # returns a tensor of shape (batch_size, coeffs, H, W)
-        # print(f'Before flattening: {x.shape}')
         # flatten the scattering coefficients
         x = x.view(x.size(0), -1)
         # use the scattering coefficients as predictors for the classifier
