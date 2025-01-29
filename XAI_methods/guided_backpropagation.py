@@ -40,10 +40,13 @@ class custom_guided_backpropagation():
 
         # get all the modules from the model
         modules = []
-        modules.append(list(self.model.layer_1.named_children()))
-        modules.append(list(self.model.layer_2.named_children()))
-        modules.append(list(self.model.layer_3.named_children()))
-        modules.append(list(self.model.layer_4.named_children()))
+        if type(self.model) == CNN:
+            modules.append(list(self.model.layer_1.named_children()))
+            modules.append(list(self.model.layer_2.named_children()))
+            modules.append(list(self.model.layer_3.named_children()))
+            modules.append(list(self.model.layer_4.named_children()))
+        elif type(self.model) == ScatNet:
+            modules.append(list(self.model.classifier.classifier.named_children()))
 
         for i in range(len(modules)):
             for name, module in modules[i]:
@@ -76,15 +79,18 @@ class custom_guided_backpropagation():
                 result: np.ndarray
                     The guided backpropagation attributions
         """
-        model_output = self.model(input_image)
-        self.model.zero_grad()
+        with torch.autograd.set_grad_enabled(True):
+            model_output = self.model(input_image)
+            # calculate gradients
+            grads = torch.autograd.grad(torch.unbind(model_output), input_image)
         
-        model_output.backward()
-
-        result = self.image_reconstruction.data[0].permute(1,2,0)
-        return result.cpu().numpy()
+        if type(self.model) == CNN:
+            result = self.image_reconstruction.data[0]
+        elif type(self.model) == ScatNet:
+            result = grads[0].squeeze()
+        return result.permute(1,2,0).cpu().numpy()
     
-def demo_guided_backprop(model, adeno_image = None, benign_image = None):
+def demo_guided_backprop(model: nn.Module, adeno_image = None, benign_image = None):
     """
         This function is used to visualize the guided Backpropagation attributions for an adenocarcinoma and a benign image.\n
         It's a demo function, to show the difference between the custom implementation and the captum implementation.
@@ -163,5 +169,5 @@ def demo_guided_backprop(model, adeno_image = None, benign_image = None):
     ax[1, 2].set_title('Benign Captum \nGuided Backpropagation')
     ax[1, 2].axis('off')
     plt.tight_layout()
-    path = os.path.join(XAI_RESULTS_PATH, 'guided_backpropagation.png')
+    path = os.path.join(XAI_RESULTS_PATH, f'guided_backpropagation_{model.__class__.__name__}.png')
     plt.savefig(path)

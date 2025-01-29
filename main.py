@@ -84,10 +84,14 @@ def main():
             benign_image = test_dataset[i][0].to(DEVICE)
         if adeno_image is not None and benign_image is not None:
             break
-
+    
+    # execute the XAI methods on the images for both models
+    # CNN model
     demo_guided_backprop(cnn, adeno_image, benign_image)
     demo_guided_gradCAM(cnn, adeno_image, benign_image)
-
+    # ScatNet model
+    demo_guided_backprop(scatnet, adeno_image, benign_image)
+    
     if not SKIP_TESTING:
         print(f'\n === Testing models ===')
         print('CNN model')

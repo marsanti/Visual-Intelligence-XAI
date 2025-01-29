@@ -1,5 +1,4 @@
-from torch import nn, softmax
-from sklearn.svm import SVC
+from torch import nn
 from kymatio.torch import Scattering2D
 
 from utils.config import *
@@ -96,7 +95,7 @@ class ScatNet(nn.Module):
     def forward(self, x):
         # x = x.squeeze(1) # remove the channel dimension
         # generate scattering coefficients
-        x = self.scatLayer.scattering(x) # returns a tensor of shape (batch_size, coeffs, H, W)
+        x = self.scatLayer.scattering(x) # returns a tensor of shape (batch_size, channels, coeffs, H, W)
         # flatten the scattering coefficients
         x = x.view(x.size(0), -1)
         # use the scattering coefficients as predictors for the classifier
