@@ -4,8 +4,20 @@ import os
 import zipfile
 import time
 
+def create_project_structure():
+    # Create the dataset directory if it doesn't exist
+    if not os.path.exists(DATASET_PATH):
+        os.makedirs(DATASET_PATH)
+    if not os.path.exists(MODEL_PATH):
+        os.makedirs(MODEL_PATH)
+    if not os.path.exists(FILTERS_PATH):
+        os.makedirs(FILTERS_PATH)
+    if not os.path.exists(XAI_RESULTS_PATH):
+        os.makedirs(XAI_RESULTS_PATH)
+
 def init_dataset():
     start = time.time()
+    create_project_structure()
     # download the zip for adenocarcinoma and benign classes from google drive
     # create path string 
     adeno_path = os.path.join(DATASET_PATH, 'adenocarcinoma.zip')
