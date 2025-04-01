@@ -59,8 +59,8 @@ def main():
     if not os.path.exists(best_cnn_path) or not os.path.exists(best_scatnet_path):
         raise FileNotFoundError(f'Best models not found in {MODEL_PATH} \t try training the models first.')
     
-    cnn.load_state_dict(torch.load(best_cnn_path, weights_only=False))
-    scatnet.load_state_dict(torch.load(best_scatnet_path, weights_only=False))
+    cnn.load_state_dict(torch.load(best_cnn_path, weights_only=False, map_location=DEVICE))
+    scatnet.load_state_dict(torch.load(best_scatnet_path, weights_only=False, map_location=DEVICE))
     print(f"\t\t Done in: {time.time() - start:.2f} seconds")
 
     if not SKIP_FILTERS_EXTRACTION:

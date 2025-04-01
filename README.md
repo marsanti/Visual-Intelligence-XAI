@@ -21,7 +21,7 @@ Run `utils/init_dataset.py` from the root project folder:
 Inside `utils/config.py` you can find some flags:
 - __SKIP_TRAINING__: whether train the model or skip if already done;
 - __SKIP_FILTER_EXTRACTION__: choose to skip the filter extraction;
-- __SKIP_TESTING__: wheter testing the test set or skip it;
+- __SKIP_TESTING__: whether testing the test set or skip it;
 - __RANDOM_STATE__: set to 42 in order to reproduce our results.
 - __HYPER PARAMETERS__:
     - __K_FOLDS__: number of folds to use when doing the cross validation step;
