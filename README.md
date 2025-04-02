@@ -9,9 +9,7 @@ The xAI algorithms applied are:
 
 # Setup
 ## Requirements
-In order to duplicate our results, create an 
-environment (conda or virtual) and install the 
-packages findable in `requirements.txt`.
+In order to duplicate our results, create an environment (conda or virtual) and install the  packages findable in `requirements.txt`.
 
 ## Dataset setup
 Run `utils/init_dataset.py` from the root project folder:
@@ -34,6 +32,13 @@ Please, do ___not___ edit other config variables, if you want to reproduce the r
 # Usage
 To reproduce the results execute main.py after setup phase:
 > python main.py
+
+After the execution, inside `XAI_methods/example_images` there will be images with the explainability algorithms applied.
+
+### Example xAI algorithms
+<img src="./resources/images/guided_backpropagation_CNN.png" alt="drawing" width="600"/><br/>
+<img src="./resources/images/guided_backpropagation_ScatNet.png" alt="drawing" width="600"/><br/>
+<img src="./resources/images/guided_gradCAM.png" alt="drawing" width="600"/>
 
 ### Authors
 [@marsanti](https://github.com/marsanti) and [@DanielePasotto](https://github.com/DanielePasotto)
